@@ -7,7 +7,7 @@ package MVCPartida;
 import Dominio.Carta;
 import Dominio.IDominio;
 import Dominio.Jugador;
-import Dominio.ResumenJugador;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,7 +17,20 @@ import java.util.List;
 public class ModeloPartida implements IModelo {
     private IDominio dominio;
     private Jugador jugador; 
-    private List<IVista> observadores; 
+    private List<IVista> observadores = new ArrayList<IVista>();
+
+    public ModeloPartida(IDominio dominio, Jugador jugador) {
+        this.dominio = dominio;
+        this.jugador = jugador;
+    }
+    
+    public void notificar(){
+        for (IVista observador: observadores) {
+              observador.update(this);
+        }
+    }
+    
+    
 
     @Override
     public List<Carta> getCartasTabla() {

@@ -4,10 +4,26 @@
  */
 package MVCPartida;
 
+import Dominio.Jugador;
+
 /**
  *
  * @author josma
  */
 public class ControlPartida {
     private ModeloPartida modelo;
+
+    public ControlPartida(ModeloPartida modelo) {
+        this.modelo = modelo;
+    }
+    
+    
+    public void jalarCarta(){
+        
+    }
+    
+     public void marcarCasilla(Jugador jugador, int posicion){
+         
+        
+     }
 }

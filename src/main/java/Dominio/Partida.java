@@ -6,8 +6,9 @@ package Dominio;
 
 /**
  *
- * @author josma
+ * @author ori
  */
-public class ResumenJugador {
-    
+public class Partida {
+ 
+           
 }
