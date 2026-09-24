@@ -9,5 +9,5 @@ package MVCPartida;
  * @author josma
  */
 public class ControlPartida {
-    
+    private ModeloPartida modelo;
 }
