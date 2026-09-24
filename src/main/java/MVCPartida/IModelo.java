@@ -4,6 +4,7 @@
  */
 package MVCPartida;
 
+import Dominio.ResumenJugador;
 import Dominio.Carta;
 import java.util.List;
 

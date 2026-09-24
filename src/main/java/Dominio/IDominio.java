@@ -4,7 +4,6 @@
  */
 package Dominio;
 
-import MVCPartida.ResumenJugador;
 import java.util.List;
 
 /**
@@ -12,8 +11,19 @@ import java.util.List;
  * @author josma
  */
 public interface IDominio {
+    
+   String PREFIJO_CARTA = "CARTA: ";
    boolean marcarCasilla(Jugador jugador, int posicion);
-   void registrarCartaGritada(Jugador jugador);
+   void registrarCartaGritada(int idCarta);
    List<Carta> getCartasTabla(Jugador jugador);
+   Carta jalarCarta();
+   void aplicarMensaje(String mensaje);
+   boolean[] getCasillasMarcadas(Jugador jugador);
+   Carta getCartaActual();
+   List<Carta> getCartasGritadas();
+   List<ResumenJugador> getJugadores();
+   int getPuntaje(Jugador jugador);
+   String getAviso();
+   boolean isFinalizada();
    
 }

@@ -17,13 +17,11 @@ public class ControlPartida {
         this.modelo = modelo;
     }
     
-    
     public void jalarCarta(){
-        
+        modelo.jalarCarta();
     }
     
      public void marcarCasilla(Jugador jugador, int posicion){
-         
-        
+         modelo.marcarCasilla(jugador, posicion);
      }
 }

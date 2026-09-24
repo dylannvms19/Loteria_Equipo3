@@ -37,7 +37,8 @@ public class Carta {
         return imagenRuta;
     }
     
-    
-    
+    public boolean equals(Carta otra) {
+        return otra != null && this.idCarta == otra.idCarta;
+    }
     
 }

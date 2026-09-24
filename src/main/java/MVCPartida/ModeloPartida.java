@@ -4,6 +4,7 @@
  */
 package MVCPartida;
 
+import Dominio.ResumenJugador;
 import Dominio.Carta;
 import Dominio.IDominio;
 import Dominio.Jugador;
@@ -15,6 +16,7 @@ import java.util.List;
  * @author josma
  */
 public class ModeloPartida implements IModelo {
+    
     private IDominio dominio;
     private Jugador jugador; 
     private List<IVista> observadores = new ArrayList<IVista>();
@@ -24,51 +26,78 @@ public class ModeloPartida implements IModelo {
         this.jugador = jugador;
     }
     
+    public void attach(IVista observador){
+        observadores.add(observador);
+    }
+    
+    public void detach(IVista observador){
+        observadores.remove(observador);
+    }
+    
     public void notificar(){
         for (IVista observador: observadores) {
               observador.update(this);
         }
     }
     
+    public void jalarCarta(){
+        dominio.jalarCarta();
+        notificar();
+    }
     
-
+    public void marcarCasilla(Jugador jugador, int posicion) {
+        dominio.marcarCasilla(jugador, posicion);
+        notificar();
+    }
+    
+    public void recibirCartaGritada(int idCarta) {
+        dominio.aplicarMensaje(IDominio.PREFIJO_CARTA + idCarta);
+        notificar();
+    }
+    
+    public void aplicarActualizacionRemota(String mensaje) {
+        dominio.aplicarMensaje(mensaje);
+        notificar();
+    }
+    
+   
     @Override
     public List<Carta> getCartasTabla() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return dominio.getCartasTabla(jugador);
     }
 
     @Override
     public boolean[] getCasillasMarcadas() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return dominio.getCasillasMarcadas(jugador);
     }
 
     @Override
     public Carta getCartaActual() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return dominio.getCartaActual();
     }
 
     @Override
     public List<Carta> getCartasGritadas() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return dominio.getCartasGritadas();
     }
 
     @Override
     public List<ResumenJugador> getJugadores() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return dominio.getJugadores();
     }
 
     @Override
     public int getPuntaje() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return dominio.getPuntaje(jugador);
     }
 
     @Override
     public String getAviso() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return dominio.getAviso();
     }
 
     @Override
     public boolean isFinalizada() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return dominio.isFinalizada();
     }
 }

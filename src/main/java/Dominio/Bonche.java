@@ -20,6 +20,18 @@ public class Bonche {
         return  cartasPasadas;
     }
     
+    public void registrarCartaGritada(Carta carta){
+        cartasPasadas.add(carta);
+    }
+    
+    public boolean validaCarta(Carta carta){
+        for(Carta c : cartasPasadas){
+            if(c.equals(carta)){
+                return true;
+            }
+        }
+        return false;
+    }
     
     
     
