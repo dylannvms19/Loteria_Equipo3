@@ -4,10 +4,28 @@
  */
 package MVCPartida;
 
+import Dominio.Carta;
+import Dominio.ResumenJugador;
+import java.util.List;
+
 /**
  *
  * @author josma
  */
 public interface IModelo {
-    
+    public List<Carta> getCartasTabla();
+
+    public boolean[] getCasillasMarcadas();
+
+    public Carta getCartaActual();
+
+    public List<Carta> getCartasGritadas();
+
+    public List<ResumenJugador> getJugadores();
+
+    public int getPuntaje();
+
+    public String getAviso();
+
+    public boolean isFinalizada();
 }
