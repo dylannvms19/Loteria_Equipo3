@@ -9,30 +9,26 @@ import java.util.List;
 
 /**
  *
- * @author ori
+ * @author Diego
  */
 public class Bonche {
-    private List<Carta> cartasPasadas= new ArrayList<Carta>();
-    
-    
-    //
+
+    private List<Carta> cartasPasadas = new ArrayList<Carta>();
+
     public List<Carta> getCartasPasadas() {
-        return  cartasPasadas;
+        return cartasPasadas;
     }
-    
-    public void registrarCartaGritada(Carta carta){
+
+    public void registrarCartaGritada(Carta carta) {
         cartasPasadas.add(carta);
     }
-    
-    public boolean validaCarta(Carta carta){
-        for(Carta c : cartasPasadas){
-            if(c.equals(carta)){
+
+    public boolean validaCarta(Carta carta) {
+        for (Carta c : cartasPasadas) {
+            if (c.equals(carta)) {
                 return true;
             }
         }
         return false;
     }
-    
-    
-    
 }

@@ -9,28 +9,30 @@ import java.util.List;
 
 /**
  *
- * @author ori
+ * @author Diego
  */
 public class Tarjeta {
+
     private int numeroTabla;
     private List<Carta> cartas;
-    
-    public Tarjeta (int numeroTabla, List<Carta> cartas){
+
+    public Tarjeta(int numeroTabla, List<Carta> cartas) {
         if (cartas.size() != 16) {
-             throw new IllegalArgumentException ("La tarjeta debe tener 16 cartas");
+            throw new IllegalArgumentException("La tarjeta debe tener 16 cartas");
         }
-        this.numeroTabla= numeroTabla;
-        this.cartas= new ArrayList<Carta>(cartas);
+        this.numeroTabla = numeroTabla;
+        this.cartas = new ArrayList<Carta>(cartas);
     }
-    
+
     public Carta obtenerCartaEnPosicion(int posicion) {
         return cartas.get(posicion);
     }
-    
-    public List<Carta> getCartas(){
+
+    public List<Carta> getCartas() {
         return new ArrayList<Carta>(cartas);
     }
-    public int getNumeroTabla(){
+
+    public int getNumeroTabla() {
         return numeroTabla;
     }
 }

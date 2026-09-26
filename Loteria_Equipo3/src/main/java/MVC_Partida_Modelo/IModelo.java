@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
  */
-package MVCPartida;
+package MVC_Partida_Modelo;
 
 import Dominio.ResumenJugador;
 import Dominio.Carta;
@@ -13,6 +13,7 @@ import java.util.List;
  * @author josma
  */
 public interface IModelo {
+
     public List<Carta> getCartasTabla();
 
     public boolean[] getCasillasMarcadas();

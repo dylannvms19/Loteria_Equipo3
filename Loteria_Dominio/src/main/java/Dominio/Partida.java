@@ -4,6 +4,7 @@
  */
 package Dominio;
 
+import static Dominio.IDominio.PREFIJO_CARTA;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,9 +12,10 @@ import java.util.Map;
 
 /**
  *
- * @author Dylan
+ * @author Diego
  */
-public class Partida implements IDominio{
+public class Partida implements IDominio {
+
     private List<Jugador> jugadores;
     private Map<Jugador, TarjetaJugador> tarjetas;
     private Baraja baraja;
@@ -31,7 +33,7 @@ public class Partida implements IDominio{
             tarjetas.put(jugadores.get(i), new TarjetaJugador(tablas.get(i), new boolean[16]));
         }
     }
-    
+
     @Override
     public Carta jalarCarta() {
         if (finalizada) {
@@ -144,6 +146,4 @@ public class Partida implements IDominio{
         }
         aviso = "";
     }
-    
-           
 }

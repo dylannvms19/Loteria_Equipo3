@@ -8,9 +8,10 @@ import java.util.List;
 
 /**
  *
- * @author Dylan
+ * @author Diego
  */
 public class ResumenJugador {
+
     private String nombre;
     private List<Carta> cartasTabla;
     private boolean[] casillasMarcadas;
@@ -38,7 +39,4 @@ public class ResumenJugador {
     public int getPuntaje() {
         return puntaje;
     }
-    
-    
-    
 }

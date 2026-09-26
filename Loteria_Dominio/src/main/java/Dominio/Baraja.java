@@ -10,24 +10,27 @@ import java.util.List;
 
 /**
  *
- * @author Dylan
+ * @author Diego
  */
 public class Baraja {
+
     private List<Carta> cartas;
     private List<Carta> catalogo;
-    
+
     public Baraja(List<Carta> cartas) {
         this.catalogo = new ArrayList<Carta>(cartas);
         this.cartas = new ArrayList<Carta>(cartas);
         Collections.shuffle(this.cartas);
     }
-    
-    public Carta extraerCarta(){
-        if(cartas.isEmpty()) return null;
+
+    public Carta extraerCarta() {
+        if (cartas.isEmpty()) {
+            return null;
+        }
         return cartas.remove(0);
     }
 
-    public boolean hayCartas(){
+    public boolean hayCartas() {
         return !cartas.isEmpty();
     }
 
@@ -39,5 +42,4 @@ public class Baraja {
         }
         return null;
     }
-
 }

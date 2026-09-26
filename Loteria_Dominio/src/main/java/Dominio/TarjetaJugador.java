@@ -6,39 +6,38 @@ package Dominio;
 
 /**
  *
- * @author ori
+ * @author Diego
  */
 public class TarjetaJugador {
+
     private Tarjeta tarjeta;
     private boolean[] estadosCasillas;
 
     public TarjetaJugador(Tarjeta tarjeta, boolean[] estadosCasillas) {
         this.tarjeta = tarjeta;
-        if(estadosCasillas != null && estadosCasillas.length == 16){
+        if (estadosCasillas != null && estadosCasillas.length == 16) {
             this.estadosCasillas = estadosCasillas.clone();
-        }else{
+        } else {
             this.estadosCasillas = new boolean[16];
         }
     }
-    
-    public boolean marcarCasilla(int posicion){
-        if(posicion < 0 || posicion >= estadosCasillas.length){
+
+    public boolean marcarCasilla(int posicion) {
+        if (posicion < 0 || posicion >= estadosCasillas.length) {
             return false;
         }
         estadosCasillas[posicion] = true;
         return true;
     }
-    
-    public Carta obtenerCarta(int posicion){
-        if(posicion < 0 || posicion >= estadosCasillas.length){
+
+    public Carta obtenerCarta(int posicion) {
+        if (posicion < 0 || posicion >= estadosCasillas.length) {
             return null;
         }
         return tarjeta.obtenerCartaEnPosicion(posicion);
     }
-    
-    public boolean[] getEstadosCasillas(){
+
+    public boolean[] getEstadosCasillas() {
         return estadosCasillas.clone();
     }
-    
-    
 }

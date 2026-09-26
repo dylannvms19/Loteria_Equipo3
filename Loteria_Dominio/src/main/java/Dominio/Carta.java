@@ -6,9 +6,10 @@ package Dominio;
 
 /**
  *
- * @author josma
+ * @author Diego
  */
 public class Carta {
+
     private int idCarta;
     private String nombre;
     private int numero;
@@ -36,9 +37,8 @@ public class Carta {
     public String getImagenRuta() {
         return imagenRuta;
     }
-    
+
     public boolean equals(Carta otra) {
         return otra != null && this.idCarta == otra.idCarta;
     }
-    
 }

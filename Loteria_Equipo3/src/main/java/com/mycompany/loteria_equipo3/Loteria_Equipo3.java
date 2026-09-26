@@ -1,7 +1,6 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  */
-
 package com.mycompany.loteria_equipo3;
 
 import Dominio.Baraja;
@@ -9,8 +8,8 @@ import Dominio.Carta;
 import Dominio.Jugador;
 import Dominio.Partida;
 import Dominio.Tarjeta;
-import MVCPartida.ControlPartida;
-import MVCPartida.ModeloPartida;
+import MVC_Partida_Control.ControlPartida;
+import MVC_Partida_Modelo.ModeloPartida;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

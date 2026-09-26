@@ -6,12 +6,13 @@ package Dominio;
 
 /**
  *
- * @author josma
+ * @author Diego
  */
 public class Jugador {
-     private int idJugador;
-     private String nombre;
-     private int puntuaje;
+
+    private int idJugador;
+    private String nombre;
+    private int puntuaje;
 
     public Jugador(int idJugador, String nombre, int puntuaje) {
         this.idJugador = idJugador;
@@ -30,6 +31,4 @@ public class Jugador {
     public int getPuntuaje() {
         return puntuaje;
     }
-     
-     
 }
