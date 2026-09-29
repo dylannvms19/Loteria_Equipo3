@@ -4,11 +4,10 @@
  */
 package MVC_Partida_Modelo;
 
+import Comunicacion.ComunicacionPartida;
+import Dominio.*;
+import Dominio.Partida.MetodoVictoria;
 import MVC_Partida_Vista.IVista;
-import Dominio.ResumenJugador;
-import Dominio.Carta;
-import Dominio.IDominio;
-import Dominio.Jugador;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,16 +18,19 @@ import java.util.List;
 public class ModeloPartida implements IModelo {
 
     private IDominio dominio;
-    private Jugador jugador;
+    private ComunicacionPartida comunicacion;
     private List<IVista> observadores = new ArrayList<IVista>();
 
-    public ModeloPartida(IDominio dominio, Jugador jugador) {
+    public ModeloPartida(IDominio dominio, ComunicacionPartida comunicacion) {
         this.dominio = dominio;
-        this.jugador = jugador;
+        this.comunicacion = comunicacion;
+        comunicacion.conectarModelo(this);
     }
 
     public void attach(IVista observador) {
-        observadores.add(observador);
+        if (observador != null && !observadores.contains(observador)) {
+            observadores.add(observador);
+        }
     }
 
     public void detach(IVista observador) {
@@ -36,7 +38,8 @@ public class ModeloPartida implements IModelo {
     }
 
     public void notificar() {
-        for (IVista observador : observadores) {
+        comunicacion.detenerSiFinalizo();
+        for (IVista observador : new ArrayList<IVista>(observadores)) {
             observador.update(this);
         }
     }
@@ -46,14 +49,23 @@ public class ModeloPartida implements IModelo {
         notificar();
     }
 
-    public void marcarCasilla(Jugador jugador, int posicion) {
-        dominio.marcarCasilla(jugador, posicion);
+    public void marcarCasilla(Jugador solicitado, int posicion) {
+        dominio.marcarCasilla(solicitado, posicion);
+        notificar();
+    }
+
+    public void reclamarPremio(Jugador solicitado, MetodoVictoria metodo) {
+        dominio.reclamarPremio(solicitado, metodo);
+        notificar();
+    }
+
+    public void abandonarPartida(Jugador solicitado) {
+        dominio.abandonarPartida(solicitado);
         notificar();
     }
 
     public void recibirCartaGritada(int idCarta) {
-        dominio.aplicarMensaje(IDominio.PREFIJO_CARTA + idCarta);
-        notificar();
+        aplicarActualizacionRemota(IDominio.PREFIJO_CARTA + idCarta);
     }
 
     public void aplicarActualizacionRemota(String mensaje) {
@@ -61,13 +73,28 @@ public class ModeloPartida implements IModelo {
         notificar();
     }
 
+    public void cambiarAutomatico() {
+        comunicacion.cambiarAutomatico();
+    }
+
+    public void cambiarIntervalo(int milisegundos) {
+        comunicacion.cambiarIntervalo(milisegundos);
+    }
+
+    public void cerrarVista(IVista vista) {
+        detach(vista);
+        if (observadores.isEmpty()) {
+            comunicacion.detener();
+        }
+    }
+
     @Override
-    public List<Carta> getCartasTabla() {
+    public List<Carta> getCartasTabla(Jugador jugador) {
         return dominio.getCartasTabla(jugador);
     }
 
     @Override
-    public boolean[] getCasillasMarcadas() {
+    public boolean[] getCasillasMarcadas(Jugador jugador) {
         return dominio.getCasillasMarcadas(jugador);
     }
 
@@ -82,12 +109,18 @@ public class ModeloPartida implements IModelo {
     }
 
     @Override
-    public List<ResumenJugador> getJugadores() {
-        return dominio.getJugadores();
+    public List<ResumenJugador> getJugadores(Jugador jugador) {
+        List<ResumenJugador> otros = new ArrayList<ResumenJugador>();
+        for (ResumenJugador item : dominio.getJugadores()) {
+            if (item.getIdJugador() != jugador.getIdJugador()) {
+                otros.add(item);
+            }
+        }
+        return otros;
     }
 
     @Override
-    public int getPuntaje() {
+    public int getPuntaje(Jugador jugador) {
         return dominio.getPuntaje(jugador);
     }
 
@@ -99,5 +132,20 @@ public class ModeloPartida implements IModelo {
     @Override
     public boolean isFinalizada() {
         return dominio.isFinalizada();
+    }
+
+    @Override
+    public boolean hayCartas() {
+        return dominio.hayCartas();
+    }
+
+    @Override
+    public boolean isAutomatico() {
+        return comunicacion.isAutomatico();
+    }
+
+    @Override
+    public int getIntervalo() {
+        return comunicacion.getIntervalo();
     }
 }

@@ -4,29 +4,35 @@
  */
 package MVC_Partida_Modelo;
 
-import Dominio.ResumenJugador;
 import Dominio.Carta;
+import Dominio.Jugador;
+import Dominio.ResumenJugador;
 import java.util.List;
-
 /**
  *
  * @author josma
  */
 public interface IModelo {
 
-    public List<Carta> getCartasTabla();
+    List<Carta> getCartasTabla(Jugador jugador);
 
-    public boolean[] getCasillasMarcadas();
+    boolean[] getCasillasMarcadas(Jugador jugador);
 
-    public Carta getCartaActual();
+    Carta getCartaActual();
 
-    public List<Carta> getCartasGritadas();
+    List<Carta> getCartasGritadas();
 
-    public List<ResumenJugador> getJugadores();
+    List<ResumenJugador> getJugadores(Jugador jugador);
 
-    public int getPuntaje();
+    int getPuntaje(Jugador jugador);
 
-    public String getAviso();
+    String getAviso();
 
-    public boolean isFinalizada();
+    boolean isFinalizada();
+
+    boolean hayCartas();
+
+    boolean isAutomatico();
+
+    int getIntervalo();
 }

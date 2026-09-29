@@ -3,16 +3,15 @@
  */
 package com.mycompany.loteria_equipo3;
 
-import Dominio.Baraja;
-import Dominio.Carta;
-import Dominio.Jugador;
-import Dominio.Partida;
-import Dominio.Tarjeta;
+import Comunicacion.ComunicacionPartida;
+import Dominio.*;
 import MVC_Partida_Control.ControlPartida;
 import MVC_Partida_Modelo.ModeloPartida;
+import MVC_Partida_Vista.VistaPartida;
+import java.awt.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -21,33 +20,31 @@ import java.util.List;
 public class Loteria_Equipo3 {
 
     public static void main(String[] args) {
-        List<Carta> cartas = new ArrayList<Carta>();
-        for (int i = 1; i <= 54; i++) {
-            cartas.add(new Carta(i, "Carta " + i, i, "/imagenes/" + i + ".png"));
-        }
-        Jugador yo = new Jugador(1, "Jugador 1", 0);
-        Jugador otro = new Jugador(2, "Jugador 2", 0);
-        List<Tarjeta> tablas = new ArrayList<Tarjeta>();
-        for (int t = 1; t <= 2; t++) {
-            List<Carta> mezcla = new ArrayList<Carta>(cartas);
-            Collections.shuffle(mezcla);
-            tablas.add(new Tarjeta(t, new ArrayList<Carta>(mezcla.subList(0, 16))));
-        }
-        Partida partida = new Partida(List.of(yo, otro), tablas, new Baraja(cartas));
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                iniciar();
+            }
+        });
+    }
 
-        ModeloPartida modelo = new ModeloPartida(partida, yo);
+    private static void iniciar() {
+        List<Jugador> jugadores = new ArrayList<Jugador>();
+        jugadores.add(new Jugador(1, "Jugador 1", 0));
+        jugadores.add(new Jugador(2, "Jugador 2", 0));
+        IDominio dominio = new FachadaDominioMock(jugadores);
+        ComunicacionPartida comunicacion = new ComunicacionPartida();
+        Dimension pantalla = Toolkit.getDefaultToolkit().getScreenSize();
+        ModeloPartida modelo = new ModeloPartida(dominio, comunicacion);
         ControlPartida control = new ControlPartida(modelo);
-        modelo.attach(consulta -> System.out.println("  [update] actual=" + (consulta.getCartaActual() == null ? "-" : consulta.getCartaActual().getNombre())
-                + " | bonche=" + consulta.getCartasGritadas().size() + " | aviso='" + consulta.getAviso() + "'"));
-
-        System.out.println("1) marcar antes de que canten:");
-        control.marcarCasilla(yo, 0);
-        System.out.println("2) el griton jala una carta:");
-        control.jalarCarta();
-        System.out.println("3) llega por red la carta de mi casilla 0:");
-        modelo.recibirCartaGritada(modelo.getCartasTabla().get(0).getIdCarta());
-        System.out.println("4) marcar casilla 0 ahora si:");
-        control.marcarCasilla(yo, 0);
-        System.out.println("   casilla 0 marcada = " + modelo.getCasillasMarcadas()[0]);
+        for (int i = 0; i < jugadores.size(); i++) {
+            Jugador jugador = jugadores.get(i);
+            VistaPartida vista = new VistaPartida(control, jugador, i == 0);
+            modelo.attach(vista);
+            modelo.notificar();
+            int x = pantalla.width >= 1380 ? i * 680 + 10 : 30 + i * 55;
+            vista.setLocation(x, 20 + (pantalla.width >= 1380 ? 0 : i * 25));
+            vista.setVisible(true);
+        }
     }
 }
