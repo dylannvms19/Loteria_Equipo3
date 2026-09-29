@@ -3,6 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package MVC_Partida_Vista;
+
 import Dominio.Jugador;
 import Dominio.Partida.MetodoVictoria;
 import MVC_Partida_Control.ControlPartida;
@@ -10,12 +11,14 @@ import MVC_Partida_Modelo.IModelo;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+
 /**
  *
  * @author ori
  */
-public class VistaPartida extends JFrame implements IVista{
- private ControlPartida control;
+public class VistaPartida extends JFrame implements IVista {
+
+    private ControlPartida control;
     private Jugador jugador;
     private PanelTablero panelTablero;
     private PanelCartaActual panelCartaActual = new PanelCartaActual();
@@ -29,7 +32,7 @@ public class VistaPartida extends JFrame implements IVista{
     private JButton btnAbandonar = new JButton("Abandonar");
     private JButton btnSiguiente = new JButton("Gritar siguiente carta");
     private JButton btnAutomatico = new JButton("Iniciar automático");
-    private JComboBox<Integer> cmbIntervalo = new JComboBox<Integer>(new Integer[] {1, 3, 5});
+    private JComboBox<Integer> cmbIntervalo = new JComboBox<Integer>(new Integer[]{1, 3, 5});
     private boolean actualizando;
 
     public VistaPartida(ControlPartida control, Jugador jugador, boolean anfitrion) {
@@ -52,8 +55,11 @@ public class VistaPartida extends JFrame implements IVista{
         derecha.add(panelBonche, BorderLayout.CENTER);
         centro.add(derecha, BorderLayout.EAST);
         JPanel acciones = new JPanel(new GridLayout(1, 5, 4, 4));
-        acciones.add(btnChorro); acciones.add(btnCuatroEsquinas); acciones.add(btnCentro);
-        acciones.add(btnBuenas); acciones.add(btnAbandonar);
+        acciones.add(btnChorro);
+        acciones.add(btnCuatroEsquinas);
+        acciones.add(btnCentro);
+        acciones.add(btnBuenas);
+        acciones.add(btnAbandonar);
         centro.add(acciones, BorderLayout.SOUTH);
         contenido.add(centro, BorderLayout.CENTER);
         JPanel inferior = new JPanel(new BorderLayout());
@@ -62,8 +68,10 @@ public class VistaPartida extends JFrame implements IVista{
         JPanel pruebas = new JPanel(new FlowLayout(FlowLayout.LEFT));
         pruebas.setBorder(BorderFactory.createTitledBorder("Griton simulado (prueba local)"));
         if (anfitrion) {
-            pruebas.add(btnSiguiente); pruebas.add(btnAutomatico);
-            pruebas.add(new JLabel("Segundos:")); pruebas.add(cmbIntervalo);
+            pruebas.add(btnSiguiente);
+            pruebas.add(btnAutomatico);
+            pruebas.add(new JLabel("Segundos:"));
+            pruebas.add(cmbIntervalo);
         } else {
             pruebas.add(new JLabel("Las cartas se gritan desde la ventana del Jugador 1."));
         }
@@ -74,43 +82,90 @@ public class VistaPartida extends JFrame implements IVista{
         pack();
         setMinimumSize(new Dimension(660, 690));
     }
+
     private void conectarAcciones() {
         btnChorro.addActionListener(new ActionListener() {
-            @Override public void actionPerformed(ActionEvent e) { reclamarPremio(MetodoVictoria.CHORRO); }
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reclamarPremio(MetodoVictoria.CHORRO);
+            }
         });
         btnCuatroEsquinas.addActionListener(new ActionListener() {
-            @Override public void actionPerformed(ActionEvent e) { reclamarPremio(MetodoVictoria.CUATRO_ESQUINAS); }
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reclamarPremio(MetodoVictoria.CUATRO_ESQUINAS);
+            }
         });
         btnCentro.addActionListener(new ActionListener() {
-            @Override public void actionPerformed(ActionEvent e) { reclamarPremio(MetodoVictoria.CENTRO); }
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reclamarPremio(MetodoVictoria.CENTRO);
+            }
         });
         btnBuenas.addActionListener(new ActionListener() {
-            @Override public void actionPerformed(ActionEvent e) { reclamarPremio(MetodoVictoria.BUENAS); }
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reclamarPremio(MetodoVictoria.BUENAS);
+            }
         });
         btnAbandonar.addActionListener(new ActionListener() {
-            @Override public void actionPerformed(ActionEvent e) { abandonarPartida(); dispose(); }
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                abandonarPartida();
+                dispose();
+            }
         });
         btnSiguiente.addActionListener(new ActionListener() {
-            @Override public void actionPerformed(ActionEvent e) { jalarCarta(); }
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jalarCarta();
+            }
         });
         btnAutomatico.addActionListener(new ActionListener() {
-            @Override public void actionPerformed(ActionEvent e) { control.cambiarAutomatico(); }
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                control.cambiarAutomatico();
+            }
         });
         cmbIntervalo.addActionListener(new ActionListener() {
-            @Override public void actionPerformed(ActionEvent e) {
-                if (!actualizando) control.cambiarIntervalo(((Integer)cmbIntervalo.getSelectedItem()) * 1000);
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (!actualizando) {
+                    control.cambiarIntervalo(((Integer) cmbIntervalo.getSelectedItem()) * 1000);
+                }
             }
         });
         addWindowListener(new WindowAdapter() {
-            @Override public void windowClosing(WindowEvent e) { abandonarPartida(); }
-            @Override public void windowClosed(WindowEvent e) { control.cerrarVista(VistaPartida.this); }
+            @Override
+            public void windowClosing(WindowEvent e) {
+                abandonarPartida();
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+                control.cerrarVista(VistaPartida.this);
+            }
         });
     }
-    public void jalarCarta() { control.jalarCarta(); }
-    public void marcarCasilla(int posicion) { control.marcarCasilla(jugador, posicion); }
-    public void reclamarPremio(MetodoVictoria metodo) { control.reclamarPremio(jugador, metodo); }
-    public void abandonarPartida() { control.abandonarPartida(jugador); }
-    @Override public void update(IModelo modelo) {
+
+    public void jalarCarta() {
+        control.jalarCarta();
+    }
+
+    public void marcarCasilla(int posicion) {
+        control.marcarCasilla(jugador, posicion);
+    }
+
+    public void reclamarPremio(MetodoVictoria metodo) {
+        control.reclamarPremio(jugador, metodo);
+    }
+
+    public void abandonarPartida() {
+        control.abandonarPartida(jugador);
+    }
+
+    @Override
+    public void update(IModelo modelo) {
         actualizando = true;
         panelTablero.mostrarTablero(modelo.getCartasTabla(jugador), modelo.getCasillasMarcadas(jugador));
         panelCartaActual.mostrarCarta(modelo.getCartaActual());
@@ -125,10 +180,13 @@ public class VistaPartida extends JFrame implements IVista{
         cmbIntervalo.setSelectedItem(modelo.getIntervalo() / 1000);
         actualizando = false;
     }
+
     public void ajustarControles(boolean finalizada) {
         panelTablero.habilitar(!finalizada);
-        btnChorro.setEnabled(!finalizada); btnCuatroEsquinas.setEnabled(!finalizada);
-        btnCentro.setEnabled(!finalizada); btnBuenas.setEnabled(!finalizada);
+        btnChorro.setEnabled(!finalizada);
+        btnCuatroEsquinas.setEnabled(!finalizada);
+        btnCentro.setEnabled(!finalizada);
+        btnBuenas.setEnabled(!finalizada);
         cmbIntervalo.setEnabled(!finalizada);
-    }   
+    }
 }
