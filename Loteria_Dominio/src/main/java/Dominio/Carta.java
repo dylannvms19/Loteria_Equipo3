@@ -38,7 +38,15 @@ public class Carta {
         return imagenRuta;
     }
 
-    public boolean equals(Carta otra) {
-        return otra != null && this.idCarta == otra.idCarta;
+    @Override
+    public boolean equals(Object otra) {
+        if (!(otra instanceof Carta)) return false;
+        return idCarta == ((Carta) otra).idCarta;
     }
+    
+        @Override
+    public int hashCode() { 
+        return Integer.hashCode(idCarta);
+    }
+    
 }

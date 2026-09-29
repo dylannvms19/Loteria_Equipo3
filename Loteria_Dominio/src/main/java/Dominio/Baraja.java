@@ -42,4 +42,11 @@ public class Baraja {
         }
         return null;
     }
+    
+       public Carta retirarCarta(int idCarta) {
+        for (int i = 0; i < cartas.size(); i++) {
+            if (cartas.get(i).getIdCarta() == idCarta) return cartas.remove(i);
+        }
+        return null;
+    }
 }

@@ -6,6 +6,7 @@ package Dominio;
 
 import static Dominio.IDominio.PREFIJO_CARTA;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,136 +15,111 @@ import java.util.Map;
  *
  * @author Diego
  */
-public class Partida implements IDominio {
+public class Partida  {
+
+    public enum MetodoVictoria {
+        CHORRO, CUATRO_ESQUINAS, CENTRO, BUENAS
+    }
 
     private List<Jugador> jugadores;
-    private Map<Jugador, TarjetaJugador> tarjetas;
+    private Map<Integer, TarjetaJugador> tarjetas = new LinkedHashMap<Integer, TarjetaJugador>();
+    private Map<MetodoVictoria, Jugador> metodosReclamados = new EnumMap<MetodoVictoria, Jugador>(MetodoVictoria.class);
+    private Map<MetodoVictoria, Integer> puntosPorMetodo = new EnumMap<MetodoVictoria, Integer>(MetodoVictoria.class);
     private Baraja baraja;
-    private Bonche bonche;
+    private Bonche bonche = new Bonche();
     private Carta cartaActual;
     private boolean finalizada;
-    private String aviso = "";
+    private Jugador ganador;
+    private String aviso = "Partida preparada. Esperando una carta.";
 
     public Partida(List<Jugador> jugadores, List<Tarjeta> tablas, Baraja baraja) {
+        if (jugadores.size() < 2 || jugadores.size() > 4 || tablas.size() != jugadores.size()) {
+            throw new IllegalArgumentException("Se necesitan entre 2 y 4 jugadores y una tabla para cada uno.");
+        }
         this.jugadores = new ArrayList<Jugador>(jugadores);
         this.baraja = baraja;
-        this.bonche = new Bonche();
-        this.tarjetas = new LinkedHashMap<Jugador, TarjetaJugador>();
         for (int i = 0; i < jugadores.size(); i++) {
-            tarjetas.put(jugadores.get(i), new TarjetaJugador(tablas.get(i), new boolean[16]));
+            int id = jugadores.get(i).getIdJugador();
+            if (tarjetas.containsKey(id)) {
+                throw new IllegalArgumentException("Id de jugador repetido.");
+            }
+            tarjetas.put(id, new TarjetaJugador(tablas.get(i), new boolean[16]));
         }
+        // Valores de prueba; el enunciado permite configurarlos, pero no fija cantidades.
+        puntosPorMetodo.put(MetodoVictoria.CHORRO, 10);
+        puntosPorMetodo.put(MetodoVictoria.CUATRO_ESQUINAS, 20);
+        puntosPorMetodo.put(MetodoVictoria.CENTRO, 30);
+        puntosPorMetodo.put(MetodoVictoria.BUENAS, 100);
     }
 
-    @Override
-    public Carta jalarCarta() {
-        if (finalizada) {
-            return cartaActual;
-        }
-        if (!baraja.hayCartas()) {
-            finalizarPartida();
-            return cartaActual;
-        }
-        registrar(baraja.extraerCarta());
-        return cartaActual;
+    public List<Jugador> getJugadores() {
+        return new ArrayList<Jugador>(jugadores);
     }
 
-    @Override
-    public boolean marcarCasilla(Jugador jugador, int posicion) {
-        if (finalizada) {
-            return false;
-        }
-        TarjetaJugador tj = tarjetas.get(jugador);
-        if (tj == null) {
-            return false;
-        }
-        Carta carta = tj.obtenerCarta(posicion);
-        if (carta == null || !bonche.validaCarta(carta)) {
-            aviso = "Esa carta todavia no ha sido cantada";
-            return false;
-        }
-        aviso = "";
-        return tj.marcarCasilla(posicion);
-    }
-
-    @Override
-    public void aplicarMensaje(String mensaje) {
-        if (mensaje != null && mensaje.startsWith(PREFIJO_CARTA)) {
-            registrarCartaGritada(Integer.parseInt(mensaje.substring(PREFIJO_CARTA.length()).trim()));
-        }
-    }
-
-    @Override
-    public void registrarCartaGritada(int idCarta) {
-        Carta carta = baraja.buscarCarta(idCarta);
-        if (carta == null) {
-            aviso = "Carta desconocida: " + idCarta;
-            return;
-        }
-        registrar(carta);
-    }
-
-    @Override
-    public List<Carta> getCartasTabla(Jugador jugador) {
-        List<Carta> lista = new ArrayList<Carta>();
-        TarjetaJugador tj = tarjetas.get(jugador);
-        if (tj != null) {
-            for (int i = 0; i < 16; i++) {
-                lista.add(tj.obtenerCarta(i));
+    public Jugador buscarJugador(int id) {
+        for (Jugador j : jugadores) {
+            if (j.getIdJugador() == id) {
+                return j;
             }
         }
-        return lista;
+        return null;
     }
 
-    @Override
-    public boolean[] getCasillasMarcadas(Jugador jugador) {
-        TarjetaJugador tj = tarjetas.get(jugador);
-        return (tj == null) ? new boolean[16] : tj.getEstadosCasillas();
+    public TarjetaJugador getTarjetaJugador(Jugador jugador) {
+        return tarjetas.get(jugador.getIdJugador());
     }
 
-    @Override
+    public Baraja getBaraja() {
+        return baraja;
+    }
+
+    public Bonche getBonche() {
+        return bonche;
+    }
+
     public Carta getCartaActual() {
         return cartaActual;
     }
 
-    @Override
-    public List<Carta> getCartasGritadas() {
-        return new ArrayList<Carta>(bonche.getCartasPasadas());
-    }
-
-    @Override
-    public List<ResumenJugador> getJugadores() {
-        List<ResumenJugador> resumen = new ArrayList<ResumenJugador>();
-        for (Jugador j : jugadores) {
-            resumen.add(new ResumenJugador(j.getNombre(), getCartasTabla(j), getCasillasMarcadas(j), j.getPuntuaje()));
-        }
-        return resumen;
-    }
-
-    @Override
-    public int getPuntaje(Jugador jugador) {
-        return jugador.getPuntuaje();
-    }
-
-    @Override
-    public String getAviso() {
-        return aviso;
-    }
-
-    @Override
     public boolean isFinalizada() {
         return finalizada;
     }
 
-    public void finalizarPartida() {
-        this.finalizada = true;
+    public Jugador getGanador() {
+        return ganador;
     }
 
-    //Metodo auxiliar privado
-    private void registrar(Carta carta) {
+    public String getAviso() {
+        return aviso;
+    }
+
+    public void setAviso(String aviso) {
+        this.aviso = aviso;
+    }
+
+    public Jugador getGanadorMetodo(MetodoVictoria metodo) {
+        return metodosReclamados.get(metodo);
+    }
+
+    public int getPuntosMetodo(MetodoVictoria metodo) {
+        return puntosPorMetodo.get(metodo);
+    }
+
+    public void registrarCarta(Carta carta) {
         cartaActual = carta;
-        if (!bonche.validaCarta(carta)) {
-            bonche.registrarCartaGritada(carta);
+        bonche.registrarCartaGritada(carta);
+    }
+
+    public void registrarReclamacion(Jugador jugador, MetodoVictoria metodo) {
+        metodosReclamados.put(metodo, jugador);
+        jugador.sumarPuntos(getPuntosMetodo(metodo));
+        if (metodo == MetodoVictoria.BUENAS) {
+            ganador = jugador;
+            finalizada = true;
         }
-        aviso = "";
+    }
+
+    public void cancelarPartida() {
+        finalizada = true;
     }
 }

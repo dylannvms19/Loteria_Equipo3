@@ -4,6 +4,7 @@
  */
 package Dominio;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -12,16 +13,25 @@ import java.util.List;
  */
 public class ResumenJugador {
 
-    private String nombre;
-    private List<Carta> cartasTabla;
-    private boolean[] casillasMarcadas;
-    private int puntaje;
+    private final int idJugador;
+    private final String nombre;
+    private final List<Carta> cartasTabla;
+    private final boolean[] casillasMarcadas;
+    private final int puntaje;
+    private final boolean activo;
 
-    public ResumenJugador(String nombre, List<Carta> cartasTabla, boolean[] casillasMarcadas, int puntaje) {
+    public ResumenJugador(int idJugador, String nombre, List<Carta> cartasTabla,
+            boolean[] casillasMarcadas, int puntaje, boolean activo) {
+        this.idJugador = idJugador;
         this.nombre = nombre;
-        this.cartasTabla = cartasTabla;
-        this.casillasMarcadas = casillasMarcadas;
+        this.cartasTabla = new ArrayList<Carta>(cartasTabla);
+        this.casillasMarcadas = casillasMarcadas.clone();
         this.puntaje = puntaje;
+        this.activo = activo;
+    }
+
+    public int getIdJugador() {
+        return idJugador;
     }
 
     public String getNombre() {
@@ -29,14 +39,18 @@ public class ResumenJugador {
     }
 
     public List<Carta> getCartasTabla() {
-        return cartasTabla;
+        return new ArrayList<Carta>(cartasTabla);
     }
 
     public boolean[] getCasillasMarcadas() {
-        return casillasMarcadas;
+        return casillasMarcadas.clone();
     }
 
     public int getPuntaje() {
         return puntaje;
+    }
+
+    public boolean isActivo() {
+        return activo;
     }
 }

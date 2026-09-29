@@ -4,6 +4,7 @@
  */
 package Dominio;
 
+import Dominio.Partida.MetodoVictoria;
 import java.util.List;
 
 /**
@@ -12,17 +13,21 @@ import java.util.List;
  */
 public interface IDominio {
 
-    String PREFIJO_CARTA = "CARTA: ";
-
-    boolean marcarCasilla(Jugador jugador, int posicion);
-
-    void registrarCartaGritada(int idCarta);
-
-    List<Carta> getCartasTabla(Jugador jugador);
+    String PREFIJO_CARTA = "CARTA:";
 
     Carta jalarCarta();
 
+    void registrarCartaGritada(int idCarta);
+
     void aplicarMensaje(String mensaje);
+
+    boolean marcarCasilla(Jugador jugador, int posicion);
+
+    boolean reclamarPremio(Jugador jugador, MetodoVictoria metodo);
+
+    void abandonarPartida(Jugador jugador);
+
+    List<Carta> getCartasTabla(Jugador jugador);
 
     boolean[] getCasillasMarcadas(Jugador jugador);
 
@@ -37,4 +42,6 @@ public interface IDominio {
     String getAviso();
 
     boolean isFinalizada();
+
+    boolean hayCartas();
 }

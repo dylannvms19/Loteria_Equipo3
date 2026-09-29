@@ -26,6 +26,9 @@ public class TarjetaJugador {
         if (posicion < 0 || posicion >= estadosCasillas.length) {
             return false;
         }
+        if (estadosCasillas[posicion]) {
+            return false;
+        }
         estadosCasillas[posicion] = true;
         return true;
     }

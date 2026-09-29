@@ -19,8 +19,8 @@ public class Bonche {
         return cartasPasadas;
     }
 
-    public void registrarCartaGritada(Carta carta) {
-        cartasPasadas.add(carta);
+   public void registrarCartaGritada(Carta carta) {
+       if (carta != null && !validaCarta(carta)) cartasPasadas.add(carta);
     }
 
     public boolean validaCarta(Carta carta) {

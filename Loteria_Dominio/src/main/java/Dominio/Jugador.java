@@ -13,6 +13,7 @@ public class Jugador {
     private int idJugador;
     private String nombre;
     private int puntuaje;
+    private boolean activo= true;
 
     public Jugador(int idJugador, String nombre, int puntuaje) {
         this.idJugador = idJugador;
@@ -30,5 +31,17 @@ public class Jugador {
 
     public int getPuntuaje() {
         return puntuaje;
+    }
+    
+    public boolean isActivo() { 
+        return activo; 
+    }
+    
+    void sumarPuntos(int puntos) { 
+        puntuaje += puntos; 
+    }
+    
+    void abandonar() { 
+        activo = false; 
     }
 }
