@@ -45,8 +45,13 @@ public class ModeloPartida implements IModelo {
     }
 
     public void jalarCarta() {
-        dominio.jalarCarta();
-        notificar();
+        Carta carta = dominio.jalarCarta();
+
+        if (carta != null) {
+            recibirCartaGritada(carta.getIdCarta());
+        } else {
+            notificar();
+        }
     }
 
     public void marcarCasilla(Jugador solicitado, int posicion) {
@@ -65,7 +70,7 @@ public class ModeloPartida implements IModelo {
     }
 
     public void recibirCartaGritada(int idCarta) {
-        aplicarActualizacionRemota(IDominio.PREFIJO_CARTA + idCarta);
+        notificar();
     }
 
     public void aplicarActualizacionRemota(String mensaje) {

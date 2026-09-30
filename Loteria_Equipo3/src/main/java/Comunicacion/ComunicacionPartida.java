@@ -35,7 +35,8 @@ public class ComunicacionPartida {
 
     public void recibirMensaje(String texto) {
         if (modelo != null) {
-            modelo.aplicarActualizacionRemota(texto);
+            int idCarta = Integer.parseInt(texto.substring(6));
+            modelo.recibirCartaGritada(idCarta);
         }
     }
 
