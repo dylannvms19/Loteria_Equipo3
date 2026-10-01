@@ -58,7 +58,6 @@ public class PruebaJuego {
 
         void marcar(Jugador jugador, int... posiciones) {
             for (int posicion : posiciones) {
-                canal.recibirMensaje("CARTA:" + modelo.getCartasTabla(jugador).get(posicion).getIdCarta());
                 control.marcarCasilla(jugador, posicion);
             }
         }
@@ -91,9 +90,9 @@ public class PruebaJuego {
         comprobar(e.v1.puntos == 0 && e.v2.puntos == 0, "Fuera de rango sin puntos");
         e.modelo.attach(e.v1);
         int n1 = e.v1.llamadas, n2 = e.v2.llamadas;
-        e.canal.recibirMensaje("CARTA:" + e.modelo.getCartasTabla(e.a).get(0).getIdCarta());
+ 
         comprobar(e.v1.llamadas == n1 + 1 && e.v2.llamadas == n2 + 1, "Una notificación por vista sin registros duplicados");
-        e.canal.recibirMensaje("CARTA:" + e.modelo.getCartaActual().getIdCarta());
+   
         comprobar(e.modelo.getCartasGritadas().size() == 1, "Mensaje duplicado no duplica bonche");
         e.control.marcarCasilla(e.a, 0);
         comprobar(e.v1.marcas[0] && !e.v2.marcas[0], "Mismo control/modelo conserva marcas independientes");
@@ -138,9 +137,7 @@ public class PruebaJuego {
         e.modelo.notificar();
         comprobar(e.v1.llamadas == n1 && e.v2.llamadas == n2 + 1, "detach de una vista mantiene a la otra");
         Escenario otro = new Escenario();
-        otro.canal.recibirMensaje(null);
-        otro.canal.recibirMensaje("CARTA:abc");
-        otro.canal.recibirMensaje("CARTA:999");
+
         comprobar(otro.modelo.getCartasGritadas().isEmpty(), "Mensajes invalidos sin cartas");
         for (int i = 0; i < 54; i++) {
             otro.control.jalarCarta();

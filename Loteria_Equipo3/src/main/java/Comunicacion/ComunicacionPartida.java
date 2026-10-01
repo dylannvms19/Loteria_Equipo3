@@ -33,7 +33,7 @@ public class ComunicacionPartida {
         this.modelo = modelo;
     }
 
-    public void recibirMensaje(String texto) {
+    public void cartaGritada(String texto) {
         if (modelo != null) {
             int idCarta = Integer.parseInt(texto.substring(6));
             modelo.recibirCartaGritada(idCarta);
