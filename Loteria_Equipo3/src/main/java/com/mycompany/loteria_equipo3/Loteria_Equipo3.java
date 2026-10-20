@@ -5,9 +5,9 @@ package com.mycompany.loteria_equipo3;
 
 import Comunicacion.ComunicacionPartida;
 import Dominio.*;
-import MVC_Partida_Control.ControlPartida;
-import MVC_Partida_Modelo.ModeloPartida;
-import MVC_Partida_Vista.VistaPartida;
+import MVC_JugarPartida.ControlPartida;
+import MVC_JugarPartida.ModeloPartida;
+import MVC_JugarPartida.VistaPartida;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;

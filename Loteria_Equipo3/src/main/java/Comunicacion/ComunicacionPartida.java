@@ -4,7 +4,7 @@
  */
 package Comunicacion;
 
-import MVC_Partida_Modelo.ModeloPartida;
+import MVC_JugarPartida.ModeloPartida;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.Timer;

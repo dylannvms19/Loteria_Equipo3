@@ -2,12 +2,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package MVC_Partida_Control;
+package MVC_JugarPartida;
 
 import Dominio.Jugador;
 import Dominio.Partida.MetodoVictoria;
-import MVC_Partida_Modelo.ModeloPartida;
-import MVC_Partida_Vista.IVista;
+import MVC_JugarPartida.ModeloPartida;
+import MVC_JugarPartida.IVista;
 /**
  *
  * @author josma

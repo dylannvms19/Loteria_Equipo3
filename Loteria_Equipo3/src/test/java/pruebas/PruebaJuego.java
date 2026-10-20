@@ -4,12 +4,15 @@
  */
 package pruebas;
 
+import MVC_JugarPartida.IModelo;
+import MVC_JugarPartida.IVista;
+import MVC_JugarPartida.PanelTablero;
+import MVC_JugarPartida.PanelJugadores;
+import MVC_JugarPartida.ModeloPartida;
 import Dominio.*;
 import Dominio.Partida.MetodoVictoria;
 import Comunicacion.ComunicacionPartida;
-import MVC_Partida_Modelo.*;
-import MVC_Partida_Control.ControlPartida;
-import MVC_Partida_Vista.*;
+import MVC_JugarPartida.ControlPartida;
 import java.util.*;
 import javax.swing.SwingUtilities;
 
