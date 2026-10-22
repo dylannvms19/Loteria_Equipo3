@@ -8,6 +8,7 @@ import Dominio.Carta;
 import Dominio.Jugador;
 import Dominio.ResumenJugador;
 import java.util.List;
+
 /**
  *
  * @author josma
@@ -35,4 +36,9 @@ public interface IModelo {
     boolean isAutomatico();
 
     int getIntervalo();
+
+    //dependencias con la Ivista
+    void attach(IVista observador);
+
+    void detach(IVista observador);
 }

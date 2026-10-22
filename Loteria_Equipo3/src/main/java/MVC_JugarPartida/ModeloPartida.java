@@ -7,7 +7,6 @@ package MVC_JugarPartida;
 import Comunicacion.ComunicacionPartida;
 import Dominio.*;
 import Dominio.Partida.MetodoVictoria;
-import MVC_JugarPartida.IVista;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,12 +26,14 @@ public class ModeloPartida implements IModelo {
         comunicacion.conectarModelo(this);
     }
 
+    @Override
     public void attach(IVista observador) {
         if (observador != null && !observadores.contains(observador)) {
             observadores.add(observador);
         }
     }
 
+    @Override
     public void detach(IVista observador) {
         observadores.remove(observador);
     }
