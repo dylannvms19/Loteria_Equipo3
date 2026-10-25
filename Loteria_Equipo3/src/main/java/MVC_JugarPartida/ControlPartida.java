@@ -4,7 +4,8 @@
  */
 package MVC_JugarPartida;
 
-import Comunicacion.IDispatcher;
+import Comunicacion.IMensajeria;
+import Comunicacion.TipoMensaje;
 import Dominio.Jugador;
 import Dominio.Partida.MetodoVictoria;
 
@@ -51,9 +52,9 @@ import Dominio.Partida.MetodoVictoria;
 public class ControlPartida {
 
     private ModeloPartida modelo;
-    private IDispatcher red;
+    private IMensajeria red;
 
-    public ControlPartida(ModeloPartida modelo, IDispatcher red) {
+    public ControlPartida(ModeloPartida modelo, IMensajeria red) {
         this.modelo = modelo;
         this.red = red;
     }
@@ -64,17 +65,17 @@ public class ControlPartida {
 
     public void marcarCasilla(Jugador jugador, int posicion) {
         modelo.marcarCasilla(jugador, posicion);
-        red.enviarMensaje("MARCAR_CASILLA:" + jugador.getIdJugador()+ ":" + posicion);
+        red.enviarMensaje(TipoMensaje.MARCAR_CASILLA, String.valueOf(posicion));
     }
 
     public void reclamarPremio(Jugador jugador, MetodoVictoria metodo) {
         modelo.reclamarPremio(jugador, metodo);
-        red.enviarMensaje("RECLAMAR_PREMIO:" + jugador.getIdJugador() + ":" + metodo.name());
+        red.enviarMensaje(TipoMensaje.RECLAMAR_PREMIO, metodo.name());
     }
 
     public void abandonarPartida(Jugador jugador) {
         modelo.abandonarPartida(jugador);
-        red.enviarMensaje("ABANDONAR_PARTIDA:" + jugador.getIdJugador());
+        red.enviarMensaje(TipoMensaje.ABANDONAR_PARTIDA);
     }
 
     public void cambiarAutomatico() {

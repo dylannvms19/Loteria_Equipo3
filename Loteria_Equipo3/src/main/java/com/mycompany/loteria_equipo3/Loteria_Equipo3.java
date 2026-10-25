@@ -3,9 +3,12 @@
  */
 package com.mycompany.loteria_equipo3;
 
+import Comunicacion.Comunicacion;
 import Comunicacion.ComunicacionPartida;
-import Comunicacion.DispatcherFactory;
-import Comunicacion.IDispatcher;
+import Comunicacion.DireccionPeer;
+import Comunicacion.DirectorioPares;
+import Comunicacion.IMensajeria;
+import Comunicacion.Mensajeria;
 import Dominio.*;
 import MVC_JugarPartida.ControlPartida;
 import MVC_JugarPartida.ModeloPartida;
@@ -52,23 +55,59 @@ import javax.swing.SwingUtilities;
 //}
 public class Loteria_Equipo3 {
 
-    public static void main(String[] args) {
+    /**
+     * Uso (todo opcional): Loteria_Equipo3 [idLocal puertoLocal [id@host:puerto ...]]
+     * Sin argumentos: nodo 1 en el puerto 6001 y sin pares (el juego funciona igual, solo local).
+     */
+    public static void main(final String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                iniciar();
+                iniciar(args);
             }
         });
     }
 
-    private static void iniciar() {
+    /** Arma Comunicación + Directorio + Mensajería y abre el puerto. Si no se puede, el juego sigue en local. */
+    private static IMensajeria crearRed(String[] args) {
+        int idLocal = 1;
+        int puertoLocal = 6001;
+        DirectorioPares directorio = new DirectorioPares();
+        try {
+            if (args.length >= 2) {
+                idLocal = Integer.parseInt(args[0]);
+                puertoLocal = Integer.parseInt(args[1]);
+                for (int i = 2; i < args.length; i++) {
+                    directorio.agregar(DireccionPeer.parsear(args[i]));
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            System.err.println("Argumentos inválidos (" + e.getMessage() + "). Se usa nodo 1, puerto 6001, sin pares.");
+            idLocal = 1;
+            puertoLocal = 6001;
+            directorio = new DirectorioPares();
+        }
+        final IMensajeria red = new Mensajeria(new DireccionPeer(idLocal, "127.0.0.1", puertoLocal),
+                new Comunicacion(puertoLocal, null), directorio);
+        // Pendiente (bloques 1 y 4): entregar al modelo. Por ahora solo se muestra lo que llega.
+        red.registrarReceptor(mensaje -> System.out.println("[red] Recibido: " + mensaje));
+        try {
+            red.iniciar();
+        } catch (IllegalStateException e) {
+            System.err.println("[red] " + e.getMessage() + " - se juega solo en local.");
+        }
+        Runtime.getRuntime().addShutdownHook(new Thread(red::detener));
+        return red;
+    }
+
+    private static void iniciar(String[] args) {
         List<Jugador> jugadores = new ArrayList<Jugador>();
         jugadores.add(new Jugador(1, "Navarro", 0));
         jugadores.add(new Jugador(2, "Oponente", 0));
 
         IDominio dominio = new FachadaDominioMock(jugadores);
 
-        IDispatcher red = DispatcherFactory.crearMecanismoEnvio("127.0.0.1", 5000);
+        IMensajeria red = crearRed(args);
 
         ComunicacionPartida simuladorGriton = new ComunicacionPartida();
         Dimension pantalla = Toolkit.getDefaultToolkit().getScreenSize();
