@@ -1,63 +1,80 @@
-
 package Comunicacion;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.net.Socket;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
-/**
- * Atiende UNA conexión entrante (esquema intermitente): lee un mensaje, lo entrega al
- * {@link IReceptorExterno}, responde con el ACK y cierra. Un mensaje malformado cierra la
- * conexión sin ACK y nunca afecta al resto del nodo.
- * 
- * @author Dylan
- */
+/** Consume su cola de entrada y notifica a observadores de bytes. */
 public class Receptor implements Runnable {
+    private final BlockingQueue<byte[]> colaEntrada = new LinkedBlockingQueue<byte[]>(256);
+    private final List<IReceptorExterno> observadores = new ArrayList<IReceptorExterno>();
+    private final ServidorTCP servidor;
+    private volatile boolean activo;
+    private boolean cerrado;
+    private Thread hilo;
 
-    private static final System.Logger LOG = System.getLogger(Receptor.class.getName());
-    private static final int TIMEOUT_LECTURA_MS = 5000;
-
-    private final Socket socket;
-    private final IReceptorExterno destino;
-    private final Set<Receptor> registro;
-
-    Receptor(Socket socket, IReceptorExterno destino, Set<Receptor> registro) {
-        this.socket = socket;
-        this.destino = destino;
-        this.registro = registro;
+    public Receptor(int puertoLocal) {
+        servidor = new ServidorTCP(puertoLocal, colaEntrada);
     }
 
-    void iniciar() {
-        Thread hilo = new Thread(this, "p2p-receptor-" + socket.getRemoteSocketAddress());
-        hilo.setDaemon(true);
+    public synchronized void attach(IReceptorExterno observador) {
+        if (observador == null) { throw new IllegalArgumentException("Observador nulo."); }
+        if (!observadores.contains(observador)) { observadores.add(observador); }
+    }
+
+    public synchronized void detach(IReceptorExterno observador) {
+        observadores.remove(observador);
+    }
+
+    public synchronized void iniciar() {
+        if (cerrado) { throw new IllegalStateException("Receptor cerrado; cree otro."); }
+        if (activo) { return; }
+        servidor.iniciar();
+        activo = true;
+        hilo = new Thread(this, "loteria-receptor");
         hilo.start();
     }
 
     @Override
     public void run() {
-        try (Socket s = socket) {
-            s.setSoTimeout(TIMEOUT_LECTURA_MS);
-            Mensaje mensaje = Mensaje.leer(new DataInputStream(new BufferedInputStream(s.getInputStream())));
-            destino.recibirMensaje(mensaje);
-            s.getOutputStream().write(ClienteTCP.ACK);
-            s.getOutputStream().flush();
-        } catch (IOException | IllegalArgumentException e) {
-            LOG.log(System.Logger.Level.WARNING,
-                    "Conexión entrante descartada (" + socket.getRemoteSocketAddress() + "): " + e.getMessage());
-        } catch (RuntimeException e) {
-            LOG.log(System.Logger.Level.ERROR, "El receptor externo falló: " + e);
-        } finally {
-            registro.remove(this); // la conexión ya terminó: no se acumula en el servidor
+        while (activo) {
+            try {
+                byte[] datos = colaEntrada.take();
+                if (activo) { notificar(datos); }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
     }
 
-    void cerrar() {
-        try {
-            socket.close();
-        } catch (IOException e) {
-            LOG.log(System.Logger.Level.DEBUG, "Error cerrando socket: " + e.getMessage());
+    private void notificar(byte[] datos) {
+        List<IReceptorExterno> copia;
+        synchronized (this) { copia = new ArrayList<IReceptorExterno>(observadores); }
+        for (IReceptorExterno observador : copia) {
+            if (!activo) { break; }
+            try { observador.recibir(Arrays.copyOf(datos, datos.length)); }
+            catch (RuntimeException e) {
+                System.err.println("Falló un observador: " + e.getMessage());
+            }
         }
+    }
+
+    public void cerrar() {
+        Thread trabajador;
+        synchronized (this) {
+            cerrado = true;
+            activo = false;
+            trabajador = hilo;
+            if (trabajador != null) { trabajador.interrupt(); }
+        }
+        servidor.cerrar();
+        if (trabajador != null && trabajador != Thread.currentThread()) {
+            try { trabajador.join(2500); }
+            catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        }
+        colaEntrada.clear();
     }
 }

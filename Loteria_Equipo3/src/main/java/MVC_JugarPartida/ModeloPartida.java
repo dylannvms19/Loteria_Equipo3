@@ -1,24 +1,22 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package MVC_JugarPartida;
 
 import Comunicacion.ComunicacionPartida;
+import Comunicacion.ISalidaPartida;
+import Comunicacion.AccionPartida;
 import Dominio.*;
 import Dominio.Partida.MetodoVictoria;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author josma
- */
 public class ModeloPartida implements IModelo {
-
-    private IDominio dominio;
-    private ComunicacionPartida comunicacion;
-    private List<IVista> observadores = new ArrayList<IVista>();
+    private final IDominio dominio;
+    private final ComunicacionPartida comunicacion;
+    private final List<IVista> observadores = new ArrayList<IVista>();
+    private ISalidaPartida salida;
+    private int idLocal;
+    private boolean anfitrion;
+    private boolean iniciada = true;
+    private String avisoLocal;
 
     public ModeloPartida(IDominio dominio, ComunicacionPartida comunicacion) {
         this.dominio = dominio;
@@ -26,51 +24,100 @@ public class ModeloPartida implements IModelo {
         comunicacion.conectarModelo(this);
     }
 
-    @Override
-    public void attach(IVista observador) {
-        if (observador != null && !observadores.contains(observador)) {
-            observadores.add(observador);
-        }
+    public void conectarSalida(ISalidaPartida salida, int idLocal, boolean anfitrion) {
+        this.salida = salida;
+        this.idLocal = idLocal;
+        this.anfitrion = anfitrion;
+        iniciada = false;
+        avisoLocal = "Esperando a que los dos jugadores estén listos...";
+    }
+
+    public void iniciarPartida() {
+        iniciada = true;
+        avisoLocal = null;
+        notificar();
+    }
+
+    public void mostrarErrorRed(String texto) {
+        comunicacion.detener();
+        iniciada = false;
+        avisoLocal = texto;
+        notificar();
     }
 
     @Override
-    public void detach(IVista observador) {
-        observadores.remove(observador);
+    public boolean isIniciada() { return iniciada; }
+
+    @Override
+    public void attach(IVista observador) {
+        if (observador != null && !observadores.contains(observador)) { observadores.add(observador); }
     }
+
+    @Override
+    public void detach(IVista observador) { observadores.remove(observador); }
 
     public void notificar() {
         comunicacion.detenerSiFinalizo();
-        for (IVista observador : new ArrayList<IVista>(observadores)) {
-            observador.update(this);
-        }
+        for (IVista observador : new ArrayList<IVista>(observadores)) { observador.update(this); }
+    }
+
+    private void solicitar(AccionPartida accion, int jugador, String valor) {
+        if (!iniciada || dominio.isFinalizada()) { return; }
+        try { salida.solicitar(accion, jugador, valor); }
+        catch (RuntimeException e) { mostrarErrorRed("No se pudo enviar la acción: " + e.getMessage()); }
     }
 
     public void jalarCarta() {
-        Carta carta = dominio.jalarCarta();
-
-        if (carta != null) {
-            recibirCartaGritada(carta.getIdCarta());
+        if (!iniciada || dominio.isFinalizada()) { return; }
+        if (salida != null) {
+            if (anfitrion) { solicitar(AccionPartida.SIGUIENTE_CARTA, idLocal, ""); }
         } else {
+            dominio.jalarCarta();
             notificar();
         }
     }
 
-    public void marcarCasilla(Jugador solicitado, int posicion) {
-        dominio.marcarCasilla(solicitado, posicion);
-        notificar();
+    /** Solo el gritón del par anfitrión extrae; los demás reciben el id exacto. */
+    public Carta extraerCartaParaAnunciar() {
+        if (!iniciada || dominio.isFinalizada()) { return null; }
+        return dominio.jalarCarta();
     }
 
-    public void reclamarPremio(Jugador solicitado, MetodoVictoria metodo) {
-        dominio.reclamarPremio(solicitado, metodo);
-        notificar();
+    public void marcarCasilla(Jugador jugador, int posicion) {
+        if (salida != null) {
+            if (jugador.getIdJugador() == idLocal) { solicitar(AccionPartida.MARCAR, idLocal, String.valueOf(posicion)); }
+        } else { dominio.marcarCasilla(jugador, posicion); notificar(); }
     }
 
-    public void abandonarPartida(Jugador solicitado) {
-        dominio.abandonarPartida(solicitado);
+    public void reclamarPremio(Jugador jugador, MetodoVictoria metodo) {
+        if (salida != null) {
+            if (jugador.getIdJugador() == idLocal) { solicitar(AccionPartida.RECLAMAR, idLocal, metodo.name()); }
+        } else { dominio.reclamarPremio(jugador, metodo); notificar(); }
+    }
+
+    public void abandonarPartida(Jugador jugador) {
+        if (salida != null) {
+            if (jugador.getIdJugador() == idLocal) { solicitar(AccionPartida.ABANDONAR, idLocal, ""); }
+        } else { dominio.abandonarPartida(jugador); notificar(); }
+    }
+
+    /** Entrada ya ordenada: aplica reglas y notifica; NUNCA vuelve a enviar. */
+    public void aplicarAccion(AccionPartida accion, int idJugador, String valor) {
+        if (!iniciada) { return; }
+        avisoLocal = null;
+        Jugador jugador = new Jugador(idJugador, "", 0);
+        switch (accion) {
+            case CARTA: dominio.registrarCartaGritada(Integer.parseInt(valor)); break;
+            case MARCAR: dominio.marcarCasilla(jugador, Integer.parseInt(valor)); break;
+            case RECLAMAR: dominio.reclamarPremio(jugador, MetodoVictoria.valueOf(valor)); break;
+            case ABANDONAR: dominio.abandonarPartida(jugador); break;
+            default: throw new IllegalArgumentException("Acción no aplicable: " + accion);
+        }
         notificar();
     }
 
     public void recibirCartaGritada(int idCarta) {
+        dominio.registrarCartaGritada(idCarta);
         notificar();
     }
 
@@ -80,18 +127,14 @@ public class ModeloPartida implements IModelo {
     }
 
     public void cambiarAutomatico() {
-        comunicacion.cambiarAutomatico();
+        if (iniciada && (salida == null || anfitrion)) { comunicacion.cambiarAutomatico(); }
     }
-
     public void cambiarIntervalo(int milisegundos) {
-        comunicacion.cambiarIntervalo(milisegundos);
+        if (salida == null || anfitrion) { comunicacion.cambiarIntervalo(milisegundos); }
     }
-
     public void cerrarVista(IVista vista) {
         detach(vista);
-        if (observadores.isEmpty()) {
-            comunicacion.detener();
-        }
+        if (observadores.isEmpty()) { comunicacion.detener(); }
     }
 
     @Override
@@ -132,7 +175,7 @@ public class ModeloPartida implements IModelo {
 
     @Override
     public String getAviso() {
-        return dominio.getAviso();
+        return avisoLocal != null ? avisoLocal : dominio.getAviso();
     }
 
     @Override

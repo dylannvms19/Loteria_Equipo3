@@ -33,13 +33,20 @@ public class VistaPartida extends JFrame implements IVista {
     private JButton btnAutomatico = new JButton("Iniciar automático");
     private JComboBox<Integer> cmbIntervalo = new JComboBox<Integer>(new Integer[]{1, 3, 5});
     private boolean actualizando;
+    private boolean enRed;
+    private boolean puedeCerrar;
 
     public VistaPartida(ControlPartida control, Jugador jugador, boolean anfitrion) {
+        this(control, jugador, anfitrion, false);
+    }
+
+    public VistaPartida(ControlPartida control, Jugador jugador, boolean anfitrion, boolean enRed) {
+        this.enRed = enRed;
         this.control = control;
         this.jugador = jugador;
         panelTablero = new PanelTablero(this);
         setTitle("La Lotería — " + jugador.getNombre());
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(enRed ? JFrame.DO_NOTHING_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
         JPanel contenido = new JPanel(new BorderLayout(8, 8));
         contenido.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         contenido.setBackground(new Color(245, 230, 197));
@@ -65,7 +72,7 @@ public class VistaPartida extends JFrame implements IVista {
         inferior.add(panelMarcador, BorderLayout.NORTH);
         inferior.add(panelJugadores, BorderLayout.CENTER);
         JPanel pruebas = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        pruebas.setBorder(BorderFactory.createTitledBorder("Griton simulado (prueba local)"));
+        pruebas.setBorder(BorderFactory.createTitledBorder(enRed ? "Gritón del par anfitrión" : "Gritón simulado (prueba local)"));
         if (anfitrion) {
             pruebas.add(btnSiguiente);
             pruebas.add(btnAutomatico);
@@ -111,7 +118,6 @@ public class VistaPartida extends JFrame implements IVista {
             @Override
             public void actionPerformed(ActionEvent e) {
                 abandonarPartida();
-                dispose();
             }
         });
         btnSiguiente.addActionListener(new ActionListener() {
@@ -161,6 +167,7 @@ public class VistaPartida extends JFrame implements IVista {
 
     public void abandonarPartida() {
         control.abandonarPartida(jugador);
+        if (!enRed || puedeCerrar) { dispose(); }
     }
 
     @Override
@@ -172,12 +179,14 @@ public class VistaPartida extends JFrame implements IVista {
         panelJugadores.mostrarJugadores(modelo.getJugadores(jugador));
         panelMarcador.mostrarPuntaje(modelo.getPuntaje(jugador));
         panelMarcador.mostrarAviso(modelo.getAviso());
-        ajustarControles(modelo.isFinalizada());
-        btnSiguiente.setEnabled(!modelo.isFinalizada() && modelo.hayCartas() && !modelo.isAutomatico());
-        btnAutomatico.setEnabled(!modelo.isFinalizada() && modelo.hayCartas());
+        puedeCerrar = modelo.isFinalizada() || !modelo.isIniciada();
+        ajustarControles(modelo.isFinalizada() || !modelo.isIniciada());
+        btnSiguiente.setEnabled(modelo.isIniciada() && !modelo.isFinalizada() && modelo.hayCartas() && !modelo.isAutomatico());
+        btnAutomatico.setEnabled(modelo.isIniciada() && !modelo.isFinalizada() && modelo.hayCartas());
         btnAutomatico.setText(modelo.isAutomatico() ? "Pausar automático" : "Iniciar automático");
         cmbIntervalo.setSelectedItem(modelo.getIntervalo() / 1000);
         actualizando = false;
+        if (enRed && !jugador.isActivo()) { dispose(); }
     }
 
     public void ajustarControles(boolean finalizada) {

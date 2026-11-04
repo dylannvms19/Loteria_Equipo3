@@ -31,6 +31,8 @@ public interface IModelo {
 
     boolean isFinalizada();
 
+    boolean isIniciada();
+
     boolean hayCartas();
 
     boolean isAutomatico();

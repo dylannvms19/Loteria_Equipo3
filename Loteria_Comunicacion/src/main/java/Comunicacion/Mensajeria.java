@@ -1,159 +1,170 @@
-
 package Comunicacion;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Mensajería del Par. Habla con tres vecinos del diagrama:
- * - hacia abajo, con la {@link IComunicacion} (enviar / recibir);
- * - de lado, con el {@link DirectorioPares} (consultar / actualizar);
- * - hacia arriba, con el receptor externo inyectado (el modelo), al que entrega las acciones recibidas.
- *
- * Filtra los mensajes propios, los duplicados y los de directorio antes de entregar al modelo.
- * 
- * @author Dylan
- */
+/** Selecciona destinatarios, serializa y entrega mensajes interpretados. */
 public class Mensajeria implements IMensajeria, IReceptorExterno {
-
-    private static final System.Logger LOG = System.getLogger(Mensajeria.class.getName());
-
     private final DireccionPeer propia;
-    private final IComunicacion comunicacion;
+    private final IDispatcher dispatcher;
     private final DirectorioPares directorio;
-    // Arranca en el reloj para que un nodo reiniciado no repita secuencias ya vistas por los demás.
-    private final AtomicLong secuencia = new AtomicLong(System.currentTimeMillis());
+    private final SerializadorMensajes serializador;
+    // Lista de observadores, no Map de receptores.
+    private final List<IReceptorMensaje> receptores = new ArrayList<IReceptorMensaje>();
     private final Map<Integer, Long> ultimaSecuencia = new HashMap<Integer, Long>();
-    private volatile IReceptorExterno receptor;
-    private boolean iniciada;
-    private boolean detenida;
+    private final AtomicLong secuencia = new AtomicLong(System.currentTimeMillis());
+    private final Object candadoConsulta = new Object();
+    private final BlockingQueue<Mensaje> respuestas = new LinkedBlockingQueue<Mensaje>();
+    private volatile long consultaPendiente = -1;
+    private volatile DireccionPeer servidorCentral;
 
-    /**
-     * @param propia       id, host y puerto con que este nodo se da a conocer a los demás
-     * @param comunicacion capa TCP sobre la que viaja todo
-     * @param directorio   pares conocidos (puede venir ya con algunos)
-     */
-    public Mensajeria(DireccionPeer propia, IComunicacion comunicacion, DirectorioPares directorio) {
-        if (propia == null || comunicacion == null || directorio == null) {
-            throw new IllegalArgumentException("Dirección propia, comunicación y directorio son obligatorios.");
-        }
+    public Mensajeria(DireccionPeer propia, IDispatcher dispatcher,
+            DirectorioPares directorio, SerializadorMensajes serializador) {
         this.propia = propia;
-        this.comunicacion = comunicacion;
+        this.dispatcher = dispatcher;
         this.directorio = directorio;
-        this.comunicacion.registrarReceptor(this);
+        this.serializador = serializador;
+    }
+
+    public void setServidorCentral(DireccionPeer servidorCentral) {
+        this.servidorCentral = servidorCentral;
     }
 
     @Override
-    public void registrarReceptor(IReceptorExterno receptor) {
-        this.receptor = receptor;
+    public synchronized void registrarReceptor(IReceptorMensaje receptor) {
+        if (receptor == null) { throw new IllegalArgumentException("Receptor nulo."); }
+        if (!receptores.contains(receptor)) { receptores.add(receptor); }
     }
 
     @Override
-    public synchronized void iniciar() {
-        if (iniciada || detenida) {
-            return;
-        }
-        List<DireccionPeer> otros = new ArrayList<DireccionPeer>();
-        for (DireccionPeer p : directorio.obtener()) {
-            if (p.idPeer() != propia.idPeer()) {
-                otros.add(p);
-            }
-        }
-        comunicacion.actualizarPares(otros);
-        comunicacion.iniciar();
-        iniciada = true;
+    public synchronized void retirarReceptor(IReceptorMensaje receptor) {
+        receptores.remove(receptor);
     }
 
     @Override
     public void enviarMensaje(TipoMensaje tipo, String... argumentos) {
         if (tipo.esDeDirectorio()) {
-            throw new IllegalArgumentException(tipo + " solo se intercambia con el servidor central.");
+            throw new IllegalArgumentException("Use registrarEnServidor o consultarPares.");
         }
-        comunicacion.enviarAPares(nuevoMensaje(tipo, argumentos));
+        Mensaje mensaje = nuevoMensaje(tipo, argumentos);
+        for (DireccionPeer destino : directorio.obtener()) {
+            if (destino.idPeer() != propia.idPeer()) { enviarA(mensaje, destino); }
+        }
+    }
+
+    @Override
+    public void enviarAJugador(int id, TipoMensaje tipo, String... argumentos) {
+        for (DireccionPeer destino : directorio.obtener()) {
+            if (destino.idPeer() == id && id != propia.idPeer()) {
+                enviarA(nuevoMensaje(tipo, argumentos), destino);
+                return;
+            }
+        }
+        throw new IllegalStateException("No se conoce la dirección del jugador " + id);
+    }
+
+    private Mensaje nuevoMensaje(TipoMensaje tipo, String... argumentos) {
+        return new Mensaje(tipo, propia.idPeer(), secuencia.incrementAndGet(), Arrays.asList(argumentos));
+    }
+
+    private void enviarA(Mensaje mensaje, DireccionPeer destino) {
+        try {
+            byte[] datos = serializador.serializar(mensaje);
+            dispatcher.enviar(datos, destino.host(), destino.puerto());
+        } catch (IOException e) {
+            throw new IllegalArgumentException("No se puede serializar el mensaje.", e);
+        }
+    }
+
+    @Override
+    public void recibir(byte[] datos) {
+        Mensaje mensaje;
+        try { mensaje = serializador.deserializar(datos); }
+        catch (IOException e) {
+            System.err.println("Mensaje inválido: " + e.getMessage());
+            return;
+        }
+        if (mensaje.getTipo() == TipoMensaje.RESPUESTA_PARES) {
+            DireccionPeer central = servidorCentral;
+            if (central != null && mensaje.getIdOrigen() == central.idPeer()
+                    && mensaje.getSecuencia() == consultaPendiente) {
+                respuestas.offer(mensaje);
+            }
+            return;
+        }
+        if (mensaje.getIdOrigen() == propia.idPeer()) { return; }
+        // La deduplicación se aplica a eventos de juego, no a consultas del directorio.
+        if (!mensaje.getTipo().esDeDirectorio()) {
+            synchronized (ultimaSecuencia) {
+                Long ultima = ultimaSecuencia.get(mensaje.getIdOrigen());
+                if (ultima != null && mensaje.getSecuencia() <= ultima) { return; }
+                ultimaSecuencia.put(mensaje.getIdOrigen(), mensaje.getSecuencia());
+            }
+        }
+        List<IReceptorMensaje> copia;
+        synchronized (this) { copia = new ArrayList<IReceptorMensaje>(receptores); }
+        for (IReceptorMensaje receptor : copia) {
+            try {
+                if (receptor.acepta(mensaje.getTipo().name())) { receptor.procesar(mensaje); }
+            } catch (RuntimeException e) {
+                System.err.println("Receptor de mensajes: " + e.getMessage());
+            }
+        }
     }
 
     @Override
     public List<DireccionPeer> registrarEnServidor() throws IOException {
-        return pedirAlServidor(TipoMensaje.REGISTRAR_PAR,
-                String.valueOf(propia.idPeer()), propia.host(), String.valueOf(propia.puerto()));
+        return consultar(nuevoMensaje(TipoMensaje.REGISTRAR_PAR,
+                String.valueOf(propia.idPeer()), propia.host(), String.valueOf(propia.puerto())));
     }
 
     @Override
     public List<DireccionPeer> consultarPares() throws IOException {
-        return pedirAlServidor(TipoMensaje.CONSULTAR_PARES);
+        return consultar(nuevoMensaje(TipoMensaje.CONSULTAR_PARES));
     }
 
-    private List<DireccionPeer> pedirAlServidor(TipoMensaje tipo, String... argumentos) throws IOException {
-        Mensaje respuesta = comunicacion.enviarAlServidor(nuevoMensaje(tipo, argumentos));
-        if (respuesta.getTipo() != TipoMensaje.RESPUESTA_PARES) {
-            throw new IOException("Respuesta inesperada del servidor: " + respuesta.getTipo());
-        }
-        List<DireccionPeer> recibidos;
-        try {
-            recibidos = DirectorioPares.parsearLista(respuesta.getArgumento(0));
-        } catch (IllegalArgumentException e) {
-            throw new IOException("Lista de pares inválida del servidor: " + e.getMessage(), e);
-        }
-        List<DireccionPeer> otros = new ArrayList<DireccionPeer>();
-        for (DireccionPeer p : recibidos) {
-            if (p.idPeer() != propia.idPeer()) {
-                otros.add(p);
-            }
-        }
-        directorio.reemplazar(otros);
-        comunicacion.actualizarPares(otros);
-        return otros;
-    }
-
-    private Mensaje nuevoMensaje(TipoMensaje tipo, String... argumentos) {
-        return new Mensaje(tipo, propia.idPeer(), secuencia.incrementAndGet(), List.of(argumentos));
-    }
-
-    /** Llamado por la Comunicación. Descarta propios, duplicados y de directorio; entrega en orden. */
-    @Override
-    public void recibirMensaje(Mensaje mensaje) {
-        if (mensaje.getIdOrigen() == propia.idPeer() || mensaje.getTipo().esDeDirectorio()) {
-            return;
-        }
-        synchronized (ultimaSecuencia) {
-            Long ultima = ultimaSecuencia.get(mensaje.getIdOrigen());
-            if (ultima != null && mensaje.getSecuencia() <= ultima) {
-                return; // reintento de un mensaje ya entregado
-            }
-            ultimaSecuencia.put(mensaje.getIdOrigen(), mensaje.getSecuencia());
-            IReceptorExterno destino = receptor;
-            if (destino == null) {
-                LOG.log(System.Logger.Level.WARNING, "Mensaje sin receptor registrado: " + mensaje);
-                return;
-            }
+    /** Bloquea hasta 5 segundos. No llamar desde el hilo Swing ni desde procesar(). */
+    private List<DireccionPeer> consultar(Mensaje solicitud) throws IOException {
+        synchronized (candadoConsulta) {
+            DireccionPeer central = servidorCentral;
+            if (central == null) { throw new IOException("No se configuró el servidor central."); }
+            respuestas.clear();
+            consultaPendiente = solicitud.getSecuencia();
             try {
-                destino.recibirMensaje(mensaje);
-            } catch (RuntimeException e) {
-                LOG.log(System.Logger.Level.ERROR, "El receptor falló con " + mensaje + ": " + e);
+                enviarA(solicitud, central);
+                Mensaje respuesta = respuestas.poll(5, TimeUnit.SECONDS);
+                if (respuesta == null) { throw new IOException("El directorio no respondió a tiempo."); }
+                List<DireccionPeer> pares = DirectorioPares.parsearLista(respuesta.getArgumento(0));
+                directorio.reemplazar(pares);
+                directorio.quitar(propia.idPeer());
+                return directorio.obtener();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Consulta interrumpida.", e);
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                throw new IOException("No se pudo consultar el directorio.", e);
+            } finally {
+                consultaPendiente = -1;
+                respuestas.clear();
             }
         }
     }
 
-    @Override
-    public synchronized void detener() {
-        if (detenida) {
-            return;
-        }
-        detenida = true;
-        comunicacion.detener();
+    /** Utilizada por el servicio de directorio del servidor central. */
+    public void responderDirectorio(Mensaje solicitud, DireccionPeer destino, String lista) {
+        Mensaje respuesta = new Mensaje(TipoMensaje.RESPUESTA_PARES, propia.idPeer(),
+                solicitud.getSecuencia(), Arrays.asList(lista));
+        enviarA(respuesta, destino);
     }
 
     @Override
-    public int getIdNodo() {
-        return propia.idPeer();
-    }
-
-    @Override
-    public int getPeersAlcanzables() {
-        return comunicacion.getPeersAlcanzables();
-    }
+    public int getIdNodo() { return propia.idPeer(); }
 }

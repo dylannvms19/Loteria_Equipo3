@@ -12,6 +12,11 @@ public enum TipoMensaje {
     
     /** Un nodo (el gritón) anuncia la carta que salió. Args: idCarta. */
     CARTA_GRITADA(1, false),
+    LISTO(1, false),
+    INICIAR_PARTIDA(2, false),
+    SOLICITAR_ACCION(3, false),
+    ACCION_ORDENADA(5, false),
+    ERROR_PARTIDA(1, false),
     /** Un jugador marcó una casilla. Args: posicion. */
     MARCAR_CASILLA(1, false),
     /** Un jugador reclama un premio. Args: nombre del MetodoVictoria. */

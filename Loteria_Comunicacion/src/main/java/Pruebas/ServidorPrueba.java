@@ -1,36 +1,27 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package Pruebas;
 
-/**
- *
- * @author MrGam
- */
-import java.io.InputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+import Comunicacion.IReceptorExterno;
+import Comunicacion.Receptor;
+import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
 
+/** Receptor manual del NUEVO protocolo (longitud + bytes). */
 public class ServidorPrueba {
-
     public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(5000)) {
-            System.out.println("Servidor esperando conexiones en el puerto 5000...");
-
-            Socket cliente = serverSocket.accept();
-            System.out.println("¡Cliente conectado desde " + cliente.getInetAddress() + "!");
-
-            InputStream in = cliente.getInputStream();
-            byte[] buffer = new byte[1024];
-            int bytesLeidos;
-
-            while ((bytesLeidos = in.read(buffer)) != -1) {
-                String mensaje = new String(buffer, 0, bytesLeidos);
-                System.out.println("Mensaje recibido: " + mensaje);
+        int puerto = args.length > 0 ? Integer.parseInt(args[0]) : 5000;
+        Receptor receptor = new Receptor(puerto);
+        receptor.attach(new IReceptorExterno() {
+            @Override
+            public void recibir(byte[] datos) {
+                System.out.println("Bytes recibidos: " + datos.length + " / texto: "
+                        + new String(datos, StandardCharsets.UTF_8));
             }
-        } catch (Exception e) {
-            System.err.println("Error en el servidor: " + e.getMessage());
-        }
+        });
+        try {
+            receptor.iniciar();
+            System.out.println("Escuchando en " + puerto + ". Enter para cerrar.");
+            Scanner entrada = new Scanner(System.in);
+            if (entrada.hasNextLine()) { entrada.nextLine(); }
+        } finally { receptor.cerrar(); }
     }
 }
